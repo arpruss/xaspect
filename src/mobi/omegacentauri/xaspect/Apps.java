@@ -51,8 +51,8 @@ public class Apps extends Activity {
 	SharedPreferences prefs;
 	final static String PREF_APPS = "A.";
 	static final String PREFS = "preferences";
-//	public static final String PREF_ENTER = "enter";
-	public static final String PREF_LEFT_RIGHT = "leftRight";
+	public static final String DEFAULT_ASPECT = "Default";
+	public static final String CUSTOM = "Custom";
 	
 	
 	public static void saveIcon(Context c, String packageName) {
@@ -141,27 +141,6 @@ public class Apps extends Activity {
         res = getResources();        
 
         appsList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-	}
-	
-	@SuppressLint("NewApi")
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		Intent i;
-		
-		switch(item.getItemId()) {
-//		case R.id.enter:
-//			boolean opt = ! prefs.getBoolean(PREF_ENTER, false);
-//			prefs.edit().putBoolean(PREF_ENTER, opt).commit();
-//			invalidateOptionsMenu();
-//			return true;
-		case R.id.leftright:
-			boolean opt = ! prefs.getBoolean(PREF_LEFT_RIGHT, false);
-			prefs.edit().putBoolean(PREF_LEFT_RIGHT, opt).commit();
-			invalidateOptionsMenu();
-			return true;
-		default:
-			return false;
-		}
 	}
 
 //	@Override

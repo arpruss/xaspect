@@ -8,10 +8,13 @@ import java.util.List;
 
 
 import mobi.omegacentauri.xaspect.R;
+import mobi.omegacentauri.xaspect.Apps;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
@@ -21,6 +24,9 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -29,7 +35,22 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+
 public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
+	public static final String[] aspects = {
+		Apps.DEFAULT_ASPECT,
+		"5:4",
+		"4:3",
+		"1.375:1",
+		"1.41:1",
+		"1.43:1",
+		"3:2",
+		"16:10",
+		"5:3",
+		"16:9",
+		"1.85:1",
+		"2.39:1",
+	};
 	final PackageManager pm;
 	final Context	 context;
 	final ListView listView;
@@ -116,26 +137,57 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 				tv.setText(a.getLabel());
 				tv = (TextView)v.findViewById(R.id.text2);
 				tv.setText(a.getPackageName());
-				CheckBox cb = (CheckBox)v.findViewById(R.id.checkbox);
-				cb.setOnCheckedChangeListener(null);
-				cb.setChecked(
-						null != (pref.getString(Apps.PREF_APPS+a.getPackageName(), null)));
-				cb.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-					@Override
-					public void onCheckedChanged(CompoundButton buttonView,
-							boolean isChecked) {
-						if (isChecked)
-							((Apps)context).activateApp(a);
-						else
-							((Apps)context).deactivateApp(a);
-					}
-				});
+				tv = (TextView)v.findViewById(R.id.aspect);
+				String aspectValue = pref.getString(Apps.PREF_APPS+a.getPackageName(), Apps.DEFAULT_ASPECT);
+				tv.setText(aspectValue);
 				return v;
 			}				
 		};
 		
 		appInfoAdapter.sort(MyApplicationInfo.LabelComparator);
 		listView.setAdapter(appInfoAdapter);
+		listView.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				Log.v("XAspect", "onItemSelected "+position);
+				MyApplicationInfo a = (MyApplicationInfo) listView.getAdapter().getItem(position);
+				
+				final String prefKey = Apps.PREF_APPS+a.getPackageName();
+				String aspectValue = pref.getString(prefKey, Apps.DEFAULT_ASPECT);
+
+				Log.v("XAspect", "building");
+				AlertDialog.Builder b = new AlertDialog.Builder(context);
+				int cur = -1;
+				for (int i = 0; i < aspects.length ; i++) {
+					
+					if (cur < 0 && aspects[i].equals(Apps.CUSTOM))
+						cur = i;
+					
+					if (aspectValue.equals(aspects[i])) {
+						cur = i;
+						break;
+					}
+				}
+				b.setSingleChoiceItems(aspects, cur, new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						if (aspects[which] != Apps.CUSTOM) {
+							if (aspects[which] == Apps.DEFAULT_ASPECT)
+								pref.edit().remove(prefKey).commit();
+							else
+								pref.edit().putString(prefKey, aspects[which]).commit();
+							listView.invalidateViews();
+						}
+						dialog.dismiss();
+					}
+				});
+				b.show();
+			}
+
+		});
 		
 		Map<String,?> map = pref.getAll();
 		

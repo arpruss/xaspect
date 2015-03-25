@@ -37,7 +37,9 @@ public class Hook implements IXposedHookLoadPackage {
 	public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable {
 		XSharedPreferences prefs = new XSharedPreferences(Apps.class.getPackage().getName(), Apps.PREFS);
 
-		double aspect = Apps.parseAspect(prefs.getString(Apps.PREF_APPS+lpparam.packageName, null));
+		double aspect = Apps.parseAspect(prefs.getString(Apps.PREF_APPS+lpparam.packageName, Apps.DEFAULT_ASPECT));
+		
+		XposedBridge.log("XAspect for "+lpparam.packageName+" "+aspect);
 
 		if (! Double.isNaN(aspect))
 			fixAspect(lpparam, aspect);

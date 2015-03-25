@@ -5,17 +5,13 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Choose apps for remapping volume up/down to page up/down:" />
-
     <ListView
         android:id="@+id/apps"
         android:layout_width="fill_parent"
         android:layout_height="0dip"
         android:layout_weight="1"
-        android:fastScrollAlwaysVisible="true"
+        android:fastScrollAlwaysVisible="false"
+        android:fastScrollEnabled="true"
         android:scrollbars="vertical" />
 
     <LinearLayout
