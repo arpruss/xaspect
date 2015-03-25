@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:title="Volume to left/right if kb shown [off]" android:id="@+id/leftright"></item>
+   <!--  <item android:title="Enter maps to page down [off]" android:id="@+id/enter"></item>  -->
+</menu>

@@ -1,2 +1,4 @@
-# xaspect
-Xposed module to adjust aspect ratio
+brainlink-wave
+==============
+
+Android controller for Brainlink-based wave generator
