@@ -1,4 +1,4 @@
-package mobi.omegacentauri.xupdown;
+package mobi.omegacentauri.xaspect;
 
 import java.util.Comparator;
 import java.util.Locale;

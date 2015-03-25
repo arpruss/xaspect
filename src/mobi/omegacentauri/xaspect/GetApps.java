@@ -7,7 +7,7 @@ import android.widget.CheckBox;
 import java.util.List;
 
 
-import mobi.omegacentauri.xupdown.R;
+import mobi.omegacentauri.xaspect.R;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
