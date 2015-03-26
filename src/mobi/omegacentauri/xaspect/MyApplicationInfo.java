@@ -16,7 +16,7 @@ import android.util.Log;
 public class MyApplicationInfo {
 	private String label;
 	private int versionCode;
-	private int uid;
+	int uid;
 	public String packageName;
 	
 	public static final Comparator<MyApplicationInfo> LabelComparator = 

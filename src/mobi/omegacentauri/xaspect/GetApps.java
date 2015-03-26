@@ -1,16 +1,22 @@
 package mobi.omegacentauri.xaspect;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Map;
 
 import android.widget.CheckBox;
 import java.util.List;
 
+import de.robv.android.xposed.XposedHelpers;
+
 
 import mobi.omegacentauri.xaspect.R;
 import mobi.omegacentauri.xaspect.Apps;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -21,6 +27,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -152,12 +159,11 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 				Log.v("XAspect", "onItemSelected "+position);
-				MyApplicationInfo a = (MyApplicationInfo) listView.getAdapter().getItem(position);
+				final MyApplicationInfo app = (MyApplicationInfo) listView.getAdapter().getItem(position);
 				
-				final String prefKey = Apps.PREF_APPS+a.getPackageName();
-				String aspectValue = pref.getString(prefKey, Apps.DEFAULT_ASPECT);
+				final String prefKey = Apps.PREF_APPS+app.getPackageName();
+				final String aspectValue = pref.getString(prefKey, Apps.DEFAULT_ASPECT);
 
-				Log.v("XAspect", "building");
 				AlertDialog.Builder b = new AlertDialog.Builder(context);
 				int cur = -1;
 				for (int i = 0; i < aspects.length ; i++) {
@@ -170,19 +176,47 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 						break;
 					}
 				}
+
 				b.setSingleChoiceItems(aspects, cur, new DialogInterface.OnClickListener() {
 					
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
+						boolean changed = false;
+						
 						if (aspects[which] != Apps.CUSTOM) {
-							if (aspects[which] == Apps.DEFAULT_ASPECT)
-								pref.edit().remove(prefKey).commit();
-							else
-								pref.edit().putString(prefKey, aspects[which]).commit();
-							listView.invalidateViews();
+							if (aspects[which] == Apps.DEFAULT_ASPECT) {
+								if (! aspectValue.equals(Apps.DEFAULT_ASPECT)) {
+									pref.edit().remove(prefKey).commit();
+									changed = true;
+								}
+							}
+							else {
+								if (! aspectValue.equals(aspects[which])) {
+									pref.edit().putString(prefKey, aspects[which]).commit();
+									changed = true;
+								}
+							}
 						}
+						else {
+							//TODO: custom
+						}
+						if (changed) {
+							listView.invalidateViews();
+							if (! app.packageName.equals("android")) {
+								ActivityManager am = (ActivityManager)context.getSystemService(Activity.ACTIVITY_SERVICE);
+								for (RunningAppProcessInfo r : am.getRunningAppProcesses()) {
+									if (r.processName.equals(app.packageName)) {
+										Log.v("XAspect", "Running "+app.packageName);
+										kill(app.packageName);
+										break;
+									}
+								}
+							}
+						}
+
 						dialog.dismiss();
 					}
+
 				});
 				b.show();
 			}
@@ -212,5 +246,25 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 		catch (Exception e) {
 		}
 //		listView.setVisibility(View.VISIBLE);
+	}
+
+	private void kill(final String packageName) {
+		new Thread() {
+			@Override
+			public void run() {
+				ProcessBuilder pb = new ProcessBuilder("su", "-c", "killall", "-9", packageName);
+				pb.redirectErrorStream(true);
+				try {
+					Process p = pb.start();
+					InputStream in = p.getInputStream();
+					while (-1 != in.read());
+					in.close();
+					p.waitFor();
+				} catch (IOException e) {
+				} catch (InterruptedException e) {
+				}
+				
+			}
+		}.start();
 	}
 }
