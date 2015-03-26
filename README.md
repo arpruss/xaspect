@@ -1,4 +1,4 @@
-brainlink-wave
-==============
+XAspect
+=======
 
-Android controller for Brainlink-based wave generator
+Force aspect ratio for specified apps. (Needs Xposed framework.)
