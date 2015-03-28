@@ -38,7 +38,7 @@ public class Hook implements IXposedHookLoadPackage {
 		XSharedPreferences prefs = new XSharedPreferences(Apps.class.getPackage().getName(), Apps.PREFS);
 
 		double aspect = Apps.parseAspect(prefs.getString(Apps.PREF_APPS+lpparam.packageName, Apps.DEFAULT_ASPECT));
-		
+
 		XposedBridge.log("XAspect for "+lpparam.packageName+" "+aspect);
 
 		if (! Double.isNaN(aspect))
@@ -50,31 +50,27 @@ public class Hook implements IXposedHookLoadPackage {
 			final Class decorClass = Class.forName("com.android.internal.policy.impl.PhoneWindow$DecorView", 
 					false, lpparam.classLoader);
 
-			findAndHookMethod("android.widget.FrameLayout", lpparam.classLoader, "onMeasure", int.class, int.class,
+			findAndHookMethod(decorClass, "onMeasure", int.class, int.class,
 					new XC_MethodHook() {
 				protected void beforeHookedMethod(final MethodHookParam param)
 						throws Throwable {
-					FrameLayout f = (FrameLayout)param.thisObject;
-					if (f.getClass() == decorClass) {
-						int width = MeasureSpec.getSize((Integer)param.args[0]);
-						int height = MeasureSpec.getSize((Integer)param.args[1]);
+					int width = MeasureSpec.getSize((Integer)param.args[0]);
+					int height = MeasureSpec.getSize((Integer)param.args[1]);
 
-						if (width != 0 && height != 0) {
-							XposedBridge.log(f.getClass().toString()+" "+width+" "+height);
-							if (Math.abs((double)width / height - aspect) > 0.01) {
-								if (height * aspect <= width) {
-									width = (int)(height * aspect);
-									param.args[0] = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
-								}
-								else {
-									height = (int)(width / aspect);
-									param.args[1] = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
-								}
-								Field outerField = decorClass.getDeclaredField("this$0");
-								outerField.setAccessible(true);
-								Window w = (Window)outerField.get(param.thisObject);
-								w.setLayout(width, height);
+					if (width != 0 && height != 0) {
+						if (Math.abs((double)width / height - aspect) > 0.01) {
+							if (height * aspect <= width) {
+								width = (int)(height * aspect);
+								param.args[0] = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
 							}
+							else {
+								height = (int)(width / aspect);
+								param.args[1] = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+							}
+							Field outerField = decorClass.getDeclaredField("this$0");
+							outerField.setAccessible(true);
+							Window w = (Window)outerField.get(param.thisObject);
+							w.setLayout(width, height);
 						}
 					}
 				}
