@@ -251,7 +251,7 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 		AlertDialog.Builder b = new AlertDialog.Builder(context);
 		
 		b.setTitle("Set custom aspect ratio");
-		b.setMessage("Enter aspect ratio in x:y format (e.g., 1:1.33 or 5:4)");
+		b.setMessage("Enter aspect ratio in x:y format (e.g., 1.33:1 or 4:5) or a simple decimal (e.g., 1.33)");
 		final EditText aspectField = new EditText(context);
 		if (Double.isNaN(Apps.parseAspect(oldAspect)))
 			aspectField.setText("4:3");
