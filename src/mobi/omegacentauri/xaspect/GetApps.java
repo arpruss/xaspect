@@ -17,6 +17,7 @@ import mobi.omegacentauri.xaspect.Apps;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
+import android.app.AlertDialog.Builder;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -37,26 +38,29 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 	public static final String[] aspects = {
 		Apps.DEFAULT_ASPECT,
-		"5:4",
+		//"5:4",
 		"4:3",
-		"1.375:1",
-		"1.41:1",
-		"1.43:1",
+		//"1.375:1",
+		//"1.41:1",
+		//"1.43:1",
 		"3:2",
 		"16:10",
-		"5:3",
+		//"5:3",
 		"16:9",
 		"1.85:1",
 		"2.39:1",
+		Apps.CUSTOM
 	};
 	final PackageManager pm;
 	final Context	 context;
@@ -158,7 +162,6 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
-				Log.v("XAspect", "onItemSelected "+position);
 				final MyApplicationInfo app = (MyApplicationInfo) listView.getAdapter().getItem(position);
 				
 				final String prefKey = Apps.PREF_APPS+app.getPackageName();
@@ -167,13 +170,18 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 				AlertDialog.Builder b = new AlertDialog.Builder(context);
 				int cur = -1;
 				for (int i = 0; i < aspects.length ; i++) {
-					
-					if (cur < 0 && aspects[i].equals(Apps.CUSTOM))
-						cur = i;
+					if (aspects[i].startsWith(Apps.CUSTOM)) {
+						if (cur < 0) {
+							cur = i;
+							aspects[i] = Apps.CUSTOM + " ["+aspectValue+"]";
+						}
+						else {
+							aspects[i] = Apps.CUSTOM;
+						}
+					}
 					
 					if (aspectValue.equals(aspects[i])) {
 						cur = i;
-						break;
 					}
 				}
 
@@ -183,7 +191,7 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 					public void onClick(DialogInterface dialog, int which) {
 						boolean changed = false;
 						
-						if (aspects[which] != Apps.CUSTOM) {
+						if (! aspects[which].startsWith(Apps.CUSTOM)) {
 							if (aspects[which] == Apps.DEFAULT_ASPECT) {
 								if (! aspectValue.equals(Apps.DEFAULT_ASPECT)) {
 									pref.edit().remove(prefKey).commit();
@@ -196,28 +204,19 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 									changed = true;
 								}
 							}
+							if (changed) {
+								updateApp(listView, app.packageName);
+							}
 						}
 						else {
-							//TODO: custom
-						}
-						if (changed) {
-							listView.invalidateViews();
-							if (! app.packageName.equals("android")) {
-								ActivityManager am = (ActivityManager)context.getSystemService(Activity.ACTIVITY_SERVICE);
-								for (RunningAppProcessInfo r : am.getRunningAppProcesses()) {
-									if (r.processName.equals(app.packageName)) {
-										Log.v("XAspect", "Running "+app.packageName);
-										kill(app.packageName);
-										break;
-									}
-								}
-							}
+							setCustom(prefKey, app.packageName, aspectValue);
 						}
 
 						dialog.dismiss();
 					}
 
 				});
+				b.setCancelable(true);
 				b.show();
 			}
 
@@ -245,14 +244,56 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 		}
 		catch (Exception e) {
 		}
-//		listView.setVisibility(View.VISIBLE);
 	}
 
-	private void kill(final String packageName) {
+	private void setCustom(final String prefKey, final String packageName, String oldAspect) {
+		AlertDialog.Builder b = new AlertDialog.Builder(context);
+		
+		b.setTitle("Set custom aspect ratio");
+		b.setMessage("Enter aspect ratio in x:y format (e.g., 1:1.33 or 5:4)");
+		final EditText aspect = new EditText(context);
+		if (Double.isNaN(Apps.parseAspect(oldAspect)))
+			aspect.setText("4:3");
+		else
+			aspect.setText(oldAspect);
+		b.setView(aspect);
+		b.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				if (Double.isNaN(Apps.parseAspect(aspect.getText().toString()))) {
+					Toast.makeText(context, "Invalid aspect value", Toast.LENGTH_LONG).show();
+				}
+				else {
+					pref.edit().putString(prefKey, aspect.getText().toString().trim()).commit();
+					updateApp(listView, packageName);
+					dialog.dismiss();
+				}
+			}
+		});
+		b.setCancelable(true);
+		b.show();
+	}
+
+
+	private void updateApp(ListView listView, String packageName) {
+		listView.invalidateViews();
+		if (! packageName.equals("android")) {
+			ActivityManager am = (ActivityManager)context.getSystemService(Activity.ACTIVITY_SERVICE);
+			for (RunningAppProcessInfo r : am.getRunningAppProcesses()) {
+				if (r.pid != 0 && r.processName.equals(packageName)) {
+					kill(r.pid);
+					break;
+				}
+			}
+		}
+	}
+
+	private void kill(final int pid) {
 		new Thread() {
 			@Override
 			public void run() {
-				ProcessBuilder pb = new ProcessBuilder("su", "-c", "killall", "-9", packageName);
+				ProcessBuilder pb = new ProcessBuilder("su", "-c", "kill", "-9", ""+pid);
 				pb.redirectErrorStream(true);
 				try {
 					Process p = pb.start();

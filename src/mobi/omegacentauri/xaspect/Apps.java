@@ -180,14 +180,25 @@ public class Apps extends Activity {
     }
 
 	public static double parseAspect(String aspect) {
+		if (aspect == null)
+			return Double.NaN;
+		
 		String parts[] = aspect.trim().split(":");
 		
 		try {
-			if (parts.length == 1)
-				return Double.parseDouble(parts[0]);
+			double x = -1;
 			
-			if (parts.length == 2)
-				return Double.parseDouble(parts[0]) / Double.parseDouble(parts[1]);
+			if (parts.length == 1)
+				x = Double.parseDouble(parts[0]);
+			else if (parts.length == 2)
+			    x = Double.parseDouble(parts[0]) / Double.parseDouble(parts[1]);
+			
+			Log.v("XAspect", aspect+" "+x+" "+parts.length);
+			
+			if (x < 0.05 || x > 20)
+				return Double.NaN;
+			else
+				return x;
 		}
 		catch (Exception e) {
 		}
