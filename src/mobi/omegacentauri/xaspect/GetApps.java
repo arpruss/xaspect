@@ -32,6 +32,7 @@ import android.os.Build;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
@@ -251,21 +252,22 @@ public class GetApps extends AsyncTask<Void, Integer, List<MyApplicationInfo>> {
 		
 		b.setTitle("Set custom aspect ratio");
 		b.setMessage("Enter aspect ratio in x:y format (e.g., 1:1.33 or 5:4)");
-		final EditText aspect = new EditText(context);
+		final EditText aspectField = new EditText(context);
 		if (Double.isNaN(Apps.parseAspect(oldAspect)))
-			aspect.setText("4:3");
+			aspectField.setText("4:3");
 		else
-			aspect.setText(oldAspect);
-		b.setView(aspect);
+			aspectField.setText(oldAspect);
+		aspectField.setSingleLine();
+		b.setView(aspectField);
 		b.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 			
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				if (Double.isNaN(Apps.parseAspect(aspect.getText().toString()))) {
+				if (Double.isNaN(Apps.parseAspect(aspectField.getText().toString()))) {
 					Toast.makeText(context, "Invalid aspect value", Toast.LENGTH_LONG).show();
 				}
 				else {
-					pref.edit().putString(prefKey, aspect.getText().toString().trim()).commit();
+					pref.edit().putString(prefKey, aspectField.getText().toString().trim()).commit();
 					updateApp(listView, packageName);
 					dialog.dismiss();
 				}
